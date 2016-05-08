@@ -20,6 +20,12 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import retrofit.Callback;
+import retrofit.RequestInterceptor;
+import retrofit.RestAdapter;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
+
 public class MainActivity extends AppCompatActivity {
     private RecyclerView mRecyclerView;
     private MoviesAdapter mAdapter;
@@ -41,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
             movies.add(new Movie());
         }
         mAdapter.setMovieList(movies);
+
+        RestAdapter();
     }
 
     @Override
@@ -73,6 +81,31 @@ public class MainActivity extends AppCompatActivity {
             super(itemView);
             imageView = (ImageView) itemView.findViewById(R.id.imageView);
         }
+    }
+
+    private void RestAdapter() {
+        RestAdapter restAdapter = new RestAdapter.Builder()
+                .setEndpoint("http://api.themoviedb.org/3")
+                .setRequestInterceptor(new RequestInterceptor() {
+                    @Override
+                    public void intercept(RequestFacade request) {
+                        request.addEncodedQueryParam("api_key", BuildConfig.THE_MOVIE_DB_API_KEY);
+                    }
+                })
+                .setLogLevel(RestAdapter.LogLevel.FULL)
+                .build();
+        MoviesApiService service = restAdapter.create(MoviesApiService.class);
+        service.getPopularMovies(new Callback<Movie.MovieResult>() {
+            @Override
+            public void success(Movie.MovieResult movieResult, Response response) {
+                mAdapter.setMovieList(movieResult.getResults());
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                error.printStackTrace();
+            }
+        });
     }
 
     public static class MoviesAdapter extends RecyclerView.Adapter<MovieViewHolder>
